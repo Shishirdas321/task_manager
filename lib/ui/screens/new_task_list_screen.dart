@@ -5,7 +5,6 @@ import 'package:task_manager/data/models/task_count_model.dart';
 import 'package:task_manager/data/models/task_list_by_status_model.dart';
 import 'package:task_manager/data/utills/urls.dart';
 import 'package:task_manager/ui/screens/add_new_task_screen.dart';
-import 'package:task_manager/ui/utills/app_colors.dart';
 import 'package:task_manager/widgets/centered_circular_progress_indicator.dart';
 import 'package:task_manager/widgets/screen_background.dart';
 import 'package:task_manager/widgets/snack_bar_message.dart';
@@ -15,6 +14,8 @@ import 'package:task_manager/widgets/tm_app_bar.dart';
 
 class NewTaskListScreen extends StatefulWidget {
   const NewTaskListScreen({super.key});
+
+  static const String name ='/new-task-list';
 
   @override
   State<NewTaskListScreen> createState() => _NewTaskListScreenState();
@@ -35,24 +36,24 @@ class _NewTaskListScreenState extends State<NewTaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       appBar: const TMAppBar(),
       body: ScreenBackground(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildTaskSummaryByStatus(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Visibility(
-                    visible: _getNewTaskListInProgress == false,
-                    replacement: const CenteredCircularProgressIndicator(),
-                    child: _buildTaskListView()),
+        child: ListView(
+          children: [
+            Visibility(
+              visible: _getNewTaskListInProgress == false,
+              replacement: const CenteredCircularProgressIndicator(),
+              child: Column(
+                children: [
+                  _buildTaskSummaryByStatus(),
+                  Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: _buildTaskListView()),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -73,31 +74,29 @@ class _NewTaskListScreenState extends State<NewTaskListScreen> {
       itemBuilder: (context, index) {
         return  TaskItemWidget(
           taskModel: newTaskListModel!.taskList![index],
-
+          taskColor: Colors.blue,
+          status: 'New',
         );
       },
     );
   }
 
   Widget _buildTaskSummaryByStatus() {
-    return  Visibility(
-      visible: _getTaskCountByStatusInProgress == false,
-      replacement: const CenteredCircularProgressIndicator(),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SizedBox(
-          height: 100,
-          child: ListView.builder(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        height: 100,
+        child: ListView.builder(
             scrollDirection: Axis.horizontal,
-              itemCount: taskCountByStatusModel?.taskByStatusList?.length ?? 0,
-              itemBuilder: (context, index){
-                final TaskCountModel model = taskCountByStatusModel!.taskByStatusList![index];
-            return  TaskStatusSummaryCounterWidget(
-              title: model.sId ?? '',
-              count: model.sum.toString() ,
-            );
-          }),
-        ),
+            primary: false,
+            shrinkWrap: true,
+            itemCount: taskCountByStatusModel?.taskByStatusList?.length ?? 0,
+            itemBuilder: (context, index) {
+              final TaskCountModel model =
+              taskCountByStatusModel!.taskByStatusList![index];
+              return TaskStatusSummaryCounterWidget(
+                count: model.sum.toString(), title: model.sId ?? '');
+            }),
       ),
     );
   }
@@ -108,7 +107,8 @@ class _NewTaskListScreenState extends State<NewTaskListScreen> {
     final NetworkResponse response =
         await NetworkCaller.getRequest(url: Urls.taskCountByStatusUrl);
     if(response.isSuccess){
-      taskCountByStatusModel = TaskCountByStatusModel.fromJson(response.responseData!);
+      taskCountByStatusModel =
+          TaskCountByStatusModel.fromJson(response.responseData!);
     }else{
       showSnackBarMessage(context, response.errorMessage);
     }

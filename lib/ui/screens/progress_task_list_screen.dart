@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager/data/models/services/network_caller.dart';
+import 'package:task_manager/data/models/task_model.dart';
 import 'package:task_manager/data/utills/urls.dart';
 import 'package:task_manager/widgets/centered_circular_progress_indicator.dart';
 import 'package:task_manager/widgets/screen_background.dart';
@@ -11,13 +12,15 @@ import '../../data/models/task_list_by_status_model.dart';
 
 class ProgressTaskListScreen extends StatefulWidget {
   const ProgressTaskListScreen({super.key});
+  static const String name = '/progress-task-list';
 
   @override
   State<ProgressTaskListScreen> createState() => _ProgressTaskListScreenState();
 }
 
 class _ProgressTaskListScreenState extends State<ProgressTaskListScreen> {
-  TaskListByStatusModel? progressTaskListModel;
+  //TaskListByStatusModel? progressTaskListModel;
+  List<TaskModel> progressTask =[];
   bool _getProgressListInProgress = false;
 
   @override
@@ -29,8 +32,6 @@ class _ProgressTaskListScreenState extends State<ProgressTaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       appBar: const TMAppBar(),
       body: ScreenBackground(
@@ -49,28 +50,46 @@ class _ProgressTaskListScreenState extends State<ProgressTaskListScreen> {
     return ListView.builder(
       shrinkWrap: true,
       primary: false,
-      itemCount: progressTaskListModel?.taskList?.length ?? 0,
+      itemCount: progressTask.length ?? 0,
       itemBuilder: (context, index) {
-
+        final task = progressTask[index];
         return  TaskItemWidget(
-          taskModel: progressTaskListModel!.taskList![index],
+          taskModel: task,
+          taskColor: Colors.amberAccent,
+          status: 'Progress',
+
         );
       },
     );
   }
 
-  Future<void> _getProgressList() async{
-    _getProgressListInProgress = true;
-    setState(() {});
-    final NetworkResponse response = await NetworkCaller.getRequest(
-        url: Urls.taskListByStatusUrl('Progress'));
-    if(response.isSuccess){
-      progressTaskListModel = TaskListByStatusModel.fromJson(response.responseData!);
-    }else{
-      showSnackBarMessage(context, response.errorMessage);
+  Future<void> _getProgressList() async {
+    setState(() {
+      _getProgressListInProgress = true;
+    });
+
+    final response = await NetworkCaller.getRequest(
+      url: Urls.taskListByStatusUrl('Progress'),
+    );
+
+    if (response.isSuccess && response.responseData != null) {
+      try{
+        final responseData = response.responseData;
+        final taskListModel = TaskListByStatusModel.fromJson(responseData!);
+        setState(() {
+          progressTask = taskListModel.taskList ?? [];
+        });
+      }catch(e){
+        debugPrint('failed to parse task list: $e');
+      }
+    } else {
+      // Handle error or show a message
+      debugPrint('Failed to fetch tasks: ${response.errorMessage}');
     }
-    _getProgressListInProgress = false;
-    setState(() {});
+
+    setState(() {
+      _getProgressListInProgress = false;
+    });
   }
 
 }

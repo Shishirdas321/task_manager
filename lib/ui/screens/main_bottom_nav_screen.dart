@@ -4,16 +4,26 @@ import 'package:task_manager/ui/screens/completed_task_list_screen.dart';
 import 'package:task_manager/ui/screens/new_task_list_screen.dart';
 import 'package:task_manager/ui/screens/progress_task_list_screen.dart';
 
+import '../../data/models/task_model.dart';
+
 class MainBottomNavScreen extends StatefulWidget {
   const MainBottomNavScreen({super.key});
 
   static const String name = '/home';
+
 
   @override
   State<MainBottomNavScreen> createState() => _MainBottomNavScreenState();
 }
 
 class _MainBottomNavScreenState extends State<MainBottomNavScreen> {
+
+  final List<TaskModel> task = [];
+
+  List<TaskModel> get completedTask{
+    return task.where((task) => task.status == 'Completed').toList();
+  }
+
   int _selectedIndex = 0;
   final List<Widget> _screen =const [
     NewTaskListScreen(),
@@ -25,7 +35,12 @@ class _MainBottomNavScreenState extends State<MainBottomNavScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screen[_selectedIndex],
+      body: RefreshIndicator(
+        onRefresh: ()async{
+
+        },
+        child: _screen[_selectedIndex],
+      ),
       bottomNavigationBar: NavigationBar(
           selectedIndex: _selectedIndex,
           onDestinationSelected: (int index) {
@@ -42,4 +57,5 @@ class _MainBottomNavScreenState extends State<MainBottomNavScreen> {
           ]),
     );
   }
+
 }

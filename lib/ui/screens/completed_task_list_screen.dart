@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager/data/models/task_model.dart';
 import 'package:task_manager/widgets/centered_circular_progress_indicator.dart';
 import 'package:task_manager/widgets/screen_background.dart';
 import 'package:task_manager/widgets/task_item_widget.dart';
@@ -11,13 +12,15 @@ import '../../widgets/snack_bar_message.dart';
 
 class CompletedTaskListScreen extends StatefulWidget {
   const CompletedTaskListScreen({super.key});
+  static const String name = '/completed-task-list';
 
   @override
   State<CompletedTaskListScreen> createState() => _CompletedTaskListScreenState();
 }
 
 class _CompletedTaskListScreenState extends State<CompletedTaskListScreen> {
-  TaskListByStatusModel? completedTaskListModel;
+ // TaskListByStatusModel? completedTaskListModel;
+  List<TaskModel> completedTask = [];
   bool _getCompletedListInProgress = false;
 
   @override
@@ -29,8 +32,6 @@ class _CompletedTaskListScreenState extends State<CompletedTaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       appBar: const TMAppBar(),
       body: ScreenBackground(
@@ -49,26 +50,43 @@ class _CompletedTaskListScreenState extends State<CompletedTaskListScreen> {
     return ListView.builder(
       shrinkWrap: true,
       primary: false,
-      itemCount:  completedTaskListModel?.taskList?.length ?? 0,
+      itemCount:  completedTask.length ?? 0,
       itemBuilder: (context, index) {
+        final task = completedTask[index];
         return  TaskItemWidget(
-          taskModel: completedTaskListModel!.taskList![index],
+          taskModel:task,
+          taskColor: Colors.greenAccent, status: 'Completed',
         );
       },
     );
   }
-  Future<void> _getCompletedList() async{
-    _getCompletedListInProgress = true;
-    setState(() {});
-    final NetworkResponse response = await NetworkCaller.getRequest(
-        url: Urls.taskListByStatusUrl('Completed'));
-    if(response.isSuccess){
-      completedTaskListModel = TaskListByStatusModel.fromJson(response.responseData!);
-    }else{
-      showSnackBarMessage(context, response.errorMessage);
+  Future<void> _getCompletedList() async {
+    setState(() {
+      _getCompletedListInProgress = true;
+    });
+
+    final response = await NetworkCaller.getRequest(
+      url: Urls.taskListByStatusUrl('Completed'),
+    );
+
+    if (response.isSuccess && response.responseData != null) {
+      try{
+        final responseData = response.responseData;
+        final taskListModel = TaskListByStatusModel.fromJson(responseData!);
+        setState(() {
+          completedTask = taskListModel.taskList ?? [];
+        });
+      }catch(e){
+        debugPrint('failed to parse task list: $e');
+      }
+    } else {
+      // Handle error or show a message
+      debugPrint('Failed to fetch tasks: ${response.errorMessage}');
     }
-    _getCompletedListInProgress = false;
-    setState(() {});
+
+    setState(() {
+      _getCompletedListInProgress = false;
+    });
   }
 }
 

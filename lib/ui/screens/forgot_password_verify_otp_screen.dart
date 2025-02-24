@@ -4,11 +4,17 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:task_manager/ui/screens/reset_password_screen.dart';
 import 'package:task_manager/ui/screens/sign_in_screen.dart';
 import 'package:task_manager/ui/utills/app_colors.dart';
+import 'package:task_manager/widgets/centered_circular_progress_indicator.dart';
 import 'package:task_manager/widgets/screen_background.dart';
 
-class ForgotPasswordVerifyOtpScreen extends StatefulWidget {
-  const ForgotPasswordVerifyOtpScreen({super.key});
+import '../../data/models/services/network_caller.dart';
+import '../../data/utills/urls.dart';
+import '../../widgets/snack_bar_message.dart';
 
+class ForgotPasswordVerifyOtpScreen extends StatefulWidget {
+  const ForgotPasswordVerifyOtpScreen({super.key, required this.email});
+
+  final String email;
   static const String name = '/forgot-password-verify-otp';
 
   @override
@@ -20,6 +26,7 @@ class _ForgotPasswordVerifyOtpScreenState
     extends State<ForgotPasswordVerifyOtpScreen> {
   final TextEditingController _otpTEController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _recoveryOtpInProgress = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +54,13 @@ class _ForgotPasswordVerifyOtpScreenState
                   const SizedBox(
                     height: 24,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, ResetPasswordScreen.name);
-                    },
-                    child: const Icon(Icons.arrow_circle_right_outlined),
+                  Visibility(
+                    visible: _recoveryOtpInProgress == false,
+                    replacement: const CenteredCircularProgressIndicator(),
+                    child: ElevatedButton(
+                      onPressed: _onTapOtpVerification,
+                      child: const Icon(Icons.arrow_circle_right_outlined),
+                    ),
                   ),
                   const SizedBox(
                     height: 48,
@@ -84,7 +93,7 @@ class _ForgotPasswordVerifyOtpScreenState
                     inactiveFillColor: Colors.white,
                     selectedColor: Colors.yellow,
                   ),
-                  animationDuration: Duration(milliseconds: 300),
+                  animationDuration: const Duration(milliseconds: 300),
                   backgroundColor: Colors.transparent,
                   enableActiveFill: true,
                   controller: _otpTEController,
@@ -115,6 +124,38 @@ class _ForgotPasswordVerifyOtpScreenState
         ],
       ),
     );
+  }
+
+  void _onTapOtpVerification() {
+    if (_formKey.currentState!.validate()) {
+      _getOtpVerification();
+    }
+  }
+
+  Future<void> _getOtpVerification() async {
+    _recoveryOtpInProgress = true;
+    setState(() {});
+    final otp = _otpTEController.text;
+    final NetworkResponse response = await NetworkCaller.getRequest(
+      url: Urls.otpVerificationUrl(widget.email, otp),
+    );
+    print(Urls.otpVerificationUrl(widget.email, otp));
+
+    if (response.isSuccess) {
+      Navigator.pushNamed(
+        context,
+        ResetPasswordScreen.name,
+        arguments: {
+          'email': widget.email,
+          'otp': otp,
+        },
+      );
+      showSnackBarMessage(context, 'Pin verified successful');
+    } else {
+      showSnackBarMessage(context, 'Invalid otp');
+    }
+    _recoveryOtpInProgress = false;
+    setState(() {});
   }
 
   @override

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager/ui/screens/add_new_task_screen.dart';
+import 'package:task_manager/ui/screens/cancelled_task_list_screen.dart';
+import 'package:task_manager/ui/screens/completed_task_list_screen.dart';
 import 'package:task_manager/ui/screens/forgot_password_verify_email_screen.dart';
 import 'package:task_manager/ui/screens/forgot_password_verify_otp_screen.dart';
 import 'package:task_manager/ui/screens/main_bottom_nav_screen.dart';
+import 'package:task_manager/ui/screens/new_task_list_screen.dart';
+import 'package:task_manager/ui/screens/progress_task_list_screen.dart';
 import 'package:task_manager/ui/screens/reset_password_screen.dart';
 import 'package:task_manager/ui/screens/sign_in_screen.dart';
 import 'package:task_manager/ui/screens/sign_up_screen.dart';
@@ -13,11 +17,14 @@ import 'package:task_manager/ui/utills/app_colors.dart';
 class TaskManagerApp extends StatelessWidget {
   const TaskManagerApp({super.key});
 
+  static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         colorSchemeSeed: AppColors.themeColor,
         textTheme: const TextTheme(
@@ -76,15 +83,28 @@ class TaskManagerApp extends StatelessWidget {
         }else if(settings.name == ForgotPasswordVerifyEmailScreen.name){
           widget = const ForgotPasswordVerifyEmailScreen();
         }else if(settings.name == ForgotPasswordVerifyOtpScreen.name){
-          widget = const ForgotPasswordVerifyOtpScreen();
+          final String email = settings.arguments as String;
+          widget =  ForgotPasswordVerifyOtpScreen(email: email);
         }else if(settings.name == ResetPasswordScreen.name){
-          widget = const ResetPasswordScreen();
+          final args = settings.arguments as Map<String, String>;
+          widget =  ResetPasswordScreen(
+            email: args['email']!,
+            otp: args['otp']!,
+          );
         }else if(settings.name == MainBottomNavScreen.name){
           widget = const MainBottomNavScreen();
         }else if(settings.name == AddNewTaskScreen.name){
           widget = const AddNewTaskScreen();
         }else if(settings.name == UpdateProfileScreen.name){
           widget = const UpdateProfileScreen();
+        }else if(settings.name == NewTaskListScreen.name){
+          widget = const NewTaskListScreen();
+        }else if(settings.name == ProgressTaskListScreen.name){
+          widget = const ProgressTaskListScreen();
+        }else if(settings.name == CompletedTaskListScreen.name){
+          widget = const CompletedTaskListScreen();
+        }else if(settings.name == CancelledTaskListScreen.name){
+          widget = const CancelledTaskListScreen();
         }
         return MaterialPageRoute(builder: (ctx) => widget);
       },
